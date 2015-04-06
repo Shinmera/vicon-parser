@@ -2,7 +2,7 @@
 (asdf:defsystem vicon-parser
   :name "Vicon-Parser"
   :version "1.0.0"
-  :license "Artistic"
+  :license "LGPL2.1"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :description "A parser for VICON CSV files."
