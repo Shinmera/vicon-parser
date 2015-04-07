@@ -15,11 +15,11 @@
    #:id
    #:sub-id
    #:points
-   #:sensor-point
-   #:sensors
+   #:marker-point
+   #:markers
    
-   #:sensor-point
-   #:sensor
+   #:marker-point
+   #:marker
    #:data
    #:metrics
    #:field
