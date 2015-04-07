@@ -135,7 +135,7 @@
 (defgeneric parse-field-for-metric (metric field)
   (:method ((metric string) field)
     (parse-field-for-metric (translate-name metric) field))
-  (:method ((metric (eql :float)))
+  (:method ((metric (eql :float)) field)
     (parse-float:parse-float field :junk-allowed T))
   (:method ((metric (eql :mm)) field)
     (let ((mm (parse-field-for-metric :float field)))
