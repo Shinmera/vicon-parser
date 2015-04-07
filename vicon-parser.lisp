@@ -44,10 +44,12 @@
             (pathname-name (file file)))))
 
 (defclass frame ()
-  ((id :initarg :id :accessor id)
+  ((vicon-file :initarg :vicon-file :accessor vicon-file)
+   (id :initarg :id :accessor id)
    (sub-id :initarg :sub-id :accessor sub-id)
    (points :initarg :points :accessor points))
   (:default-initargs
+   :vicon-file (error "VICON-FILE required.")
    :id (error "ID required.")
    :sub-id NIL
    :points (make-hash-table :test 'eql)))
@@ -56,6 +58,12 @@
   (print-unreadable-object (frame stream :type T)
     (format stream "~d~@[/~d~]"
             (id frame) (sub-id frame))))
+
+(defmethod timestamp ((frame frame))
+  (float
+   (+ (timestamp (vicon-file frame))
+      (* (id frame) (/ 1 (resolution (vicon-file frame)))))
+   1.0d0))
 
 (defgeneric marker-point (name frame)
   (:method ((name string) (frame frame))
@@ -146,9 +154,11 @@
   (:method ((metric (eql :m)) field)
     (parse-field-for-metric :float field)))
 
-(defun parse-frame (data markers)
-  (let ((frame (make-instance 'frame :id (parse-integer (first data))
-                                     :sub-id (parse-integer (second data))))
+(defun parse-frame (data markers vicon-file)
+  (let ((frame (make-instance 'frame
+                              :vicon-file vicon-file
+                              :id (parse-integer (first data))
+                              :sub-id (parse-integer (second data))))
         (data (cddr data)))
     (loop for (marker . fields) in markers
           for point = (make-instance 'marker-point :marker marker)
@@ -158,10 +168,10 @@
              (setf (marker-point marker frame) point))
     frame))
 
-(defun parse-frames (data markers)
+(defun parse-frames (data markers vicon-file)
   (let ((frames (make-array (length data) :adjustable T :fill-pointer 0)))
     (dolist (record data)
-      (vector-push-extend (parse-frame (cl-ppcre:split "," record) markers) frames))
+      (vector-push-extend (parse-frame (cl-ppcre:split "," record) markers vicon-file) frames))
     frames))
 
 (defun parse-vicon-file (pathname &key external-format)
@@ -179,5 +189,6 @@
       (setf (frames file)
             (parse-frames
              (cl-ppcre:split "[\\r\\n]+" data)
-             markers))
+             markers
+             file))
       file)))
