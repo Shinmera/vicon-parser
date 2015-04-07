@@ -9,5 +9,6 @@
   :serial T
   :components ((:file "package")
                (:file "vicon-parser"))
-  :depends-on (:cl-ppcre
+  :depends-on (:alexandria
+               :cl-ppcre
                :parse-float))

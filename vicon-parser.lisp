@@ -1,13 +1,5 @@
 (in-package #:vicon-parser)
 
-(defun slurp-stream (stream)
-  (declare (stream stream))
-  (with-output-to-string (string)
-    (let ((buffer (make-array 4096 :element-type 'character)))
-      (loop for bytes = (read-sequence buffer stream)
-            do (write-sequence buffer string :start 0 :end bytes)
-            while (= bytes 4096)))))
-
 (defun translate-name (name)
   (flet ((r (search replace data)
            (cl-ppcre:regex-replace-all search data replace)))
@@ -172,11 +164,10 @@
       (vector-push-extend (parse-frame (cl-ppcre:split "," record) markers) frames))
     frames))
 
-(defun parse-vicon-file (pathname)
+(defun parse-vicon-file (pathname &key external-format)
   (cl-ppcre:register-groups-bind (description resolution markers fields metrics data)
       ("(.*?)[\\r\\n]+([0-9]*)[\\r\\n]+(.*?)[\\r\\n]+(.*?)[\\r\\n]+(.*?)[\\r\\n]+([\\s\\S]*)"
-       (with-open-file (stream pathname)
-         (slurp-stream stream)))
+       (alexandria:read-file-into-string pathname :external-format external-format))
     (declare (ignore data))
     (let ((file (make-instance 'vicon-file :file pathname
                                            :description description
