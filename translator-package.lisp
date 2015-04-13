@@ -7,4 +7,6 @@
    #:load-vicon-proto-file
    #:to-vicon-object
    #:translate
-   #:convert))
+   #:convert
+
+   #:main))
