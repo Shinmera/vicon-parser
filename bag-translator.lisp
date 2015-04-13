@@ -57,7 +57,7 @@
 
 (defun create-vicon-channel (bag id)
   (setf (rsbag:bag-channel bag "/vicon/data:.rst.devices.mocap.Vicon")
-        `(:type (:rsb-event-0.5 :|.rst.devices.mocap.Vicon|)
+        `(:type (:rsb-event-0.8 :|.rst.devices.mocap.Vicon|)
           :source-name ,(princ-to-string id)
           :source-config ,(format nil "rsb:/#~A" id))))
 
