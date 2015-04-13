@@ -7,7 +7,7 @@
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :description "A parser for VICON CSV files."
   :serial T
-  :components ((:file "package")
+  :components ((:file "parser-package")
                (:file "vicon-parser"))
   :depends-on (:alexandria
                :cl-ppcre
