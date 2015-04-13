@@ -1,0 +1,19 @@
+package rst.devices.mocap;
+
+import "rst/math/Vec3DDouble.proto";
+
+option java_outer_classname = "ViconType";
+
+message Vicon {        
+    message MarkerPoint{
+        required string name = 1;
+        
+        required math.Vec3DDouble position = 2;
+    }
+    
+    required uint32 id = 1;
+
+    optional uint32 sub_id = 2;
+
+    repeated MarkerPoint points = 3;
+}
