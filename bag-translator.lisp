@@ -64,14 +64,16 @@
           :source-name ,(princ-to-string id)
           :source-config ,(format nil "rsb:/#~A" id))))
 
-(defun translate (vicon-file pathname)
-  (rsbag:with-bag (bag pathname :direction :io :if-exists :supersede
-                                :transform `(rsbag:&from-source :converter ,(cdr (assoc 'nibbles:octet-vector
-                                                                                        (rsb:default-converters)))))
+(defun translate (vicon-csv-pathname output-pathname)
+  (rsbag:with-bag (bag output-pathname
+                       :direction :io
+                       :if-exists :supersede
+                       :transform `(rsbag:&from-source
+                                    :converter ,(cdr (assoc 'nibbles:octet-vector
+                                                            (rsb:default-converters)))))
     (let* ((id (uuid:make-v1-uuid))
            (channel (create-vicon-channel bag id)))
-      (loop for frame across (frames vicon-file)
-            do (translate-frame frame channel id)))))
-
-(defun convert (from-csv to-tide)
-  (translate (parse-vicon-file from-csv) to-tide))
+      (map-vicon-csv (lambda (key object)
+                       (case key
+                         (:frame (translate-frame object channel id))))
+                     vicon-csv-pathname))))
