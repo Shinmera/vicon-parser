@@ -53,7 +53,6 @@
                   (rsb:timestamp event :send) timestamp
                   (rsb:timestamp event :receive) timestamp
                   (rsb:timestamp event :deliver) timestamp)
-            (describe event)
             event))))
 
 (defun create-vicon-channel (bag id)
