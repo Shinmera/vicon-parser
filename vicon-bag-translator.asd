@@ -8,9 +8,13 @@
   :description "Translating from the parsed VICON file into the RSBag format."
   :serial T
   :components ((:file "translator-package")
-               (:file "bag-translator"))
+               (:file "bag-translator")
+               (:file "translator-main"))
   :depends-on (:cl-rsbag
                :cl-rsb-common
                :rsbag-tidelog
                :rsb-converter-protocol-buffer
-               :vicon-parser))
+               :vicon-parser)
+  :build-operation asdf:program-op
+  :build-pathname "vicon-bag-translator"
+  :entry-point "vicon-bag-translator:main")
