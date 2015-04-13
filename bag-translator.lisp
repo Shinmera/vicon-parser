@@ -2,11 +2,10 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *rst-path*
-    (concatenate
-     'string
+    (merge-pathnames
+     #P"rst-proto/proto/stable/"
      (or (sb-posix:getenv "RST")
-         "/home/linus/Projects/Bielefeld/rst")
-     "/rst-proto/proto/stable/"))
+         #P"/home/linus/Projects/Bielefeld/rst/")))
 
   (defun load-proto-file (pathname)
     (let ((pbf:*proto-load-path* (list* *rst-path* pbf:*proto-load-path*)))
