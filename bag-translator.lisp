@@ -64,7 +64,7 @@
           :source-name ,(princ-to-string id)
           :source-config ,(format nil "rsb:/#~A" id))))
 
-(defun translate (vicon-csv-pathname output-pathname)
+(defun translate (vicon-csv-pathnames output-pathname)
   (rsbag:with-bag (bag output-pathname
                        :direction :io
                        :if-exists :supersede
@@ -73,7 +73,8 @@
                                                             (rsb:default-converters)))))
     (let* ((id (uuid:make-v1-uuid))
            (channel (create-vicon-channel bag id)))
-      (map-vicon-csv (lambda (key object)
-                       (case key
-                         (:frame (translate-frame object channel id))))
-                     vicon-csv-pathname))))
+      (dolist (vicon-csv-pathname vicon-csv-pathnames)
+        (map-vicon-csv (lambda (key object)
+                         (case key
+                           (:frame (translate-frame object channel id))))
+                       vicon-csv-pathname)))))
