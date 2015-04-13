@@ -154,18 +154,24 @@
   (:method ((metric (eql :m)) field)
     (parse-field-for-metric :float field)))
 
+(defun without-return (string)
+  (when string
+    (remove #\Return string)))
+
 (defun parse-frame (data markers vicon-file)
   (let ((frame (make-instance 'frame
                               :vicon-file vicon-file
                               :id (parse-integer (first data))
                               :sub-id (parse-integer (second data))))
-        (data (cddr data)))
+        (data (cddr data))) ; position data starts after id and sub-id
     (loop for (marker . fields) in markers
           for point = (make-instance 'marker-point :marker marker)
           do (loop for (field . metric) in fields
-                   do (setf (field field point) (parse-field-for-metric metric (pop data))
+                   for value = (pop data)
+                   unless (alexandria:emptyp value)
+                   do (setf (field field point) (parse-field-for-metric metric value)
                             (field-metric field point) metric))
-             (setf (marker-point marker frame) point))
+         (setf (marker-point marker frame) point))
     frame))
 
 (defun parse-frames (data markers vicon-file)

@@ -22,13 +22,16 @@
 
 (defgeneric to-vicon-object (object)
   (:method ((point marker-point))
-    (make-instance
-     'rst.devices.mocap:vicon/marker-point
-     :name (string-downcase (marker point))
-     :position (make-instance 'rst.math:vec3ddouble
-                              :x (float (field :x point) 1.0d0)
-                              :y (float (field :y point) 1.0d0)
-                              :z (float (field :z point) 1.0d0))))
+    (alexandria:when-let* ((x (field :x point))
+                           (y (field :y point))
+                           (z (field :z point)))
+      (make-instance
+       'rst.devices.mocap:vicon/marker-point
+       :name (string-downcase (marker point))
+       :position (make-instance 'rst.math:vec3ddouble
+                                :x (float x 1.0d0)
+                                :y (float y 1.0d0)
+                                :z (float z 1.0d0)))))
   (:method ((frame frame))
     (make-instance
      'RST.DEVICES.MOCAP:VICON
@@ -37,7 +40,8 @@
      :points (let ((array (make-array (hash-table-count (points frame))
                                       :fill-pointer 0)))
                (loop for point being the hash-values of (points frame)
-                     do (vector-push (to-vicon-object point) array))
+                     for object = (to-vicon-object point)
+                     when object do (vector-push object array))
                array))))
 
 (defun translate-frame (frame channel id)
