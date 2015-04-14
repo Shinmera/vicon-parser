@@ -1,8 +1,7 @@
-(cl:in-package #:vicon-bag-translator)
+(in-package #:vicon-bag-translator)
 
 (defun main ()
-  (destructuring-bind (input &optional (output (make-pathname
-						:type     "tide"
-						:defaults input)))
-      (uiop:command-line-arguments)
-    (convert input output)))
+  (let* ((args (uiop:command-line-arguments))
+         (inputs (butlast args))
+         (output (alexandria:lastcar args)))
+    (convert inputs output)))
