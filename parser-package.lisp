@@ -10,6 +10,7 @@
    #:description
    #:resolution
    #:frames
+   #:markers
    
    #:frame
    #:id
@@ -26,4 +27,6 @@
    #:field-metric
    
    #:parse-field-for-metric
+   #:read-vicon-header
+   #:map-read-vicon-frames
    #:parse-vicon-file))
