@@ -108,3 +108,9 @@
   (with-vicon-channel (channel id) target
     (dolist (src (alexandria:ensure-list source))
       (translate src channel id))))
+
+(defun main ()
+  (let* ((args (uiop:command-line-arguments))
+         (inputs (butlast args))
+         (output (alexandria:lastcar args)))
+    (convert inputs output)))

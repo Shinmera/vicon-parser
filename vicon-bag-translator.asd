@@ -8,8 +8,7 @@
   :description "Translating from the parsed VICON file into the RSBag format."
   :serial T
   :components ((:file "translator-package")
-               (:file "bag-translator")
-               (:file "translator-main"))
+               (:file "bag-translator"))
   :depends-on (:cl-rsbag
                :cl-rsb-common
                :rsbag-tidelog
