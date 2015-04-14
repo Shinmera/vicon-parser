@@ -20,13 +20,11 @@
   ((file :initarg :file :accessor file)
    (timestamp :initarg :timestamp :accessor timestamp)
    (description :initarg :description :accessor description)
-   (resolution :initarg :resolution :accessor resolution)
-   (frames :initarg :frames :accessor frames))
+   (resolution :initarg :resolution :accessor resolution))
   (:default-initargs
    :file (error "FILE required.")
    :description NIL
-   :resolution (error "RESOLUTION required.")
-   :frames ()))
+   :resolution (error "RESOLUTION required.")))
 
 (defmethod initialize-instance :after ((file vicon-file) &key)
   (unless (slot-boundp file 'timestamp)
@@ -174,27 +172,47 @@
          (setf (marker-point marker frame) point))
     frame))
 
-(defun parse-frames (data markers vicon-file)
-  (let ((frames (make-array (length data) :adjustable T :fill-pointer 0)))
-    (dolist (record data)
-      (vector-push-extend (parse-frame (cl-ppcre:split "," record) markers vicon-file) frames))
-    frames))
+(defun map-frames (function stream markers vicon-file)
+  (loop :for line := (without-return (read-line stream nil))
+     :while (not (alexandria:emptyp line)) :do
+     (let ((frame (parse-frame (cl-ppcre:split "," line) markers vicon-file)))
+       (funcall function :frame frame))))
 
-(defun parse-vicon-file (pathname &key external-format)
-  (cl-ppcre:register-groups-bind (description resolution markers fields metrics data)
-      ("(.*?)[\\r\\n]+([0-9]*)[\\r\\n]+(.*?)[\\r\\n]+(.*?)[\\r\\n]+(.*?)[\\r\\n]+([\\s\\S]*)"
-       (alexandria:read-file-into-string pathname :external-format external-format))
-    (declare (ignore data))
-    (let ((file (make-instance 'vicon-file :file pathname
-                                           :description description
-                                           :resolution (parse-integer resolution)))
-          (markers (parse-marker-list
-                    (cddr (cl-ppcre:split "," markers))
-                    (cddr (cl-ppcre:split "," fields))
-                    (cddr (cl-ppcre:split "," metrics)))))
-      (setf (frames file)
-            (parse-frames
-             (cl-ppcre:split "[\\r\\n]+" data)
-             markers
-             file))
-      file)))
+(defgeneric map-vicon-csv (function source &key pathname external-format)
+  (:documentation
+   "Call FUNCTION with a header and all frames in SOURCE.
+
+    The call for the header is of the form
+
+      (funcall function :header VICON-FILE)
+
+    where VICON-file is an instance of the `vicon-file' class.
+
+    Calls for frames are of the form
+
+      (funcall function :frame FRAME)
+
+    where frame is a `frame' instance.")
+  (:method ((function symbol) (source t) &rest args &key &allow-other-keys)
+    (apply #'map-vicon-csv (coerce function 'function) source args))
+  (:method ((function function) (source stream)
+            &key (pathname "<stream>") &allow-other-keys)
+    (destructuring-bind (description resolution markers fields metrics)
+        (loop :repeat 5 :collect (without-return (read-line source)))
+      (let ((file (make-instance 'vicon-file
+                                 :file pathname
+                                 :description description
+                                 :resolution (parse-integer resolution)))
+            (markers (parse-marker-list
+                      (cddr (cl-ppcre:split "," markers))
+                      (cddr (cl-ppcre:split "," fields))
+                      (cddr (cl-ppcre:split "," metrics)))))
+        (funcall function :header file)
+        (map-frames function source markers file))))
+  (:method ((function function) (source pathname)
+            &key (pathname source) external-format)
+    (alexandria:with-input-from-file (stream pathname
+                                             :external-format external-format)
+      (map-vicon-csv function stream :pathname pathname)))
+  (:method ((function function) (source string) &rest args &key &allow-other-keys)
+    (apply #'map-vicon-csv function (parse-namestring source) args)))

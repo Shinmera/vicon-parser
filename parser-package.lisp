@@ -9,21 +9,19 @@
    #:timestamp
    #:description
    #:resolution
-   #:frames
-   
+
    #:frame
    #:id
    #:sub-id
    #:points
    #:marker-point
    #:markers
-   
+
    #:marker-point
    #:marker
    #:data
    #:metrics
    #:field
    #:field-metric
-   
-   #:parse-field-for-metric
-   #:parse-vicon-file))
+
+   #:map-vicon-csv))
