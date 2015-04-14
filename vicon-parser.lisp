@@ -21,12 +21,14 @@
    (timestamp :initarg :timestamp :accessor timestamp)
    (description :initarg :description :accessor description)
    (resolution :initarg :resolution :accessor resolution)
+   (markers :initarg :markers :accessor markers)
    (frames :initarg :frames :accessor frames))
   (:default-initargs
    :file (error "FILE required.")
    :description NIL
    :resolution (error "RESOLUTION required.")
-   :frames ()))
+   :markers (error "MARKERS required.")
+   :frames (make-array 0 :adjustable T :fill-pointer 0)))
 
 (defmethod initialize-instance :after ((file vicon-file) &key)
   (unless (slot-boundp file 'timestamp)
@@ -154,17 +156,13 @@
   (:method ((metric (eql :m)) field)
     (parse-field-for-metric :float field)))
 
-(defun without-return (string)
-  (when string
-    (remove #\Return string)))
-
-(defun parse-frame (data markers vicon-file)
+(defun parse-frame (data vicon-file)
   (let ((frame (make-instance 'frame
                               :vicon-file vicon-file
                               :id (parse-integer (first data))
                               :sub-id (parse-integer (second data))))
         (data (cddr data))) ; position data starts after id and sub-id
-    (loop for (marker . fields) in markers
+    (loop for (marker . fields) in (markers vicon-file)
           for point = (make-instance 'marker-point :marker marker)
           do (loop for (field . metric) in fields
                    for value = (pop data)
@@ -174,27 +172,36 @@
          (setf (marker-point marker frame) point))
     frame))
 
-(defun parse-frames (data markers vicon-file)
-  (let ((frames (make-array (length data) :adjustable T :fill-pointer 0)))
-    (dolist (record data)
-      (vector-push-extend (parse-frame (cl-ppcre:split "," record) markers vicon-file) frames))
-    frames))
+(defun read-clean-line (stream)
+  (alexandria:when-let ((line (read-line stream NIL)))
+    (string-trim '(#\Return #\Newline #\Space) line)))
 
-(defun parse-vicon-file (pathname &key external-format)
-  (cl-ppcre:register-groups-bind (description resolution markers fields metrics data)
-      ("(.*?)[\\r\\n]+([0-9]*)[\\r\\n]+(.*?)[\\r\\n]+(.*?)[\\r\\n]+(.*?)[\\r\\n]+([\\s\\S]*)"
-       (alexandria:read-file-into-string pathname :external-format external-format))
-    (declare (ignore data))
-    (let ((file (make-instance 'vicon-file :file pathname
-                                           :description description
-                                           :resolution (parse-integer resolution)))
-          (markers (parse-marker-list
-                    (cddr (cl-ppcre:split "," markers))
-                    (cddr (cl-ppcre:split "," fields))
-                    (cddr (cl-ppcre:split "," metrics)))))
-      (setf (frames file)
-            (parse-frames
-             (cl-ppcre:split "[\\r\\n]+" data)
-             markers
-             file))
+(defun read-vicon-header (stream)
+  (destructuring-bind (description resolution markers fields metrics)
+      (loop repeat 5
+            for line = (read-clean-line stream)
+            if line collect line
+            else do (error "Invalid Vicon file: incomplete header."))
+    (make-instance
+     'vicon-file
+     :file (ignore-errors (pathname stream))
+     :description description
+     :resolution (parse-integer resolution)
+     :markers (parse-marker-list
+               (cddr (cl-ppcre:split "," markers))
+               (cddr (cl-ppcre:split "," fields))
+               (cddr (cl-ppcre:split "," metrics))))))
+
+(defun map-read-vicon-frames (stream vicon-file function)
+  (loop for line = (read-clean-line stream)
+        while line
+        do (funcall function (parse-frame (cl-ppcre:split "," line) vicon-file))))
+
+(defun parse-vicon-file (pathname &key (external-format :default))
+  (with-open-file (stream pathname :direction :input :external-format external-format)
+    (let ((file (read-vicon-header stream)))
+      (map-read-vicon-frames
+       stream file
+       (lambda (frame)
+         (vector-push-extend frame (frames file))))
       file)))
