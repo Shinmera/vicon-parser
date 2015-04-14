@@ -211,10 +211,11 @@
   (loop for line = (read-clean-line stream)
         while line
         do (unless (string= line "")
-             (let ((frame (with-retry-restart (retry "Retry parsing the line ~s" line)
-                            (parse-frame (cl-ppcre:split "," line) vicon-file))))
-               (with-retry-restart (retry "Retry calling the frame mapping function.")
-                 (funcall function frame))))))
+             (with-simple-restart (skip "Skip processing the line ~s" line)
+               (let ((frame (with-retry-restart (retry "Retry parsing the line ~s" line)
+                              (parse-frame (cl-ppcre:split "," line) vicon-file))))
+                 (with-retry-restart (retry "Retry calling the frame mapping function.")
+                   (funcall function frame)))))))
 
 (defun parse-vicon-file (pathname &key (external-format :default))
   (with-open-file (stream pathname :direction :input :external-format external-format)

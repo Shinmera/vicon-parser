@@ -25,8 +25,10 @@
    #:metrics
    #:field
    #:field-metric
-   
+
    #:parse-field-for-metric
    #:read-vicon-header
    #:map-read-vicon-frames
+   #:retry
+   #:skip
    #:parse-vicon-file))
