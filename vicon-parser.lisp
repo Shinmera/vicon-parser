@@ -1,5 +1,20 @@
 (in-package #:vicon-parser)
 
+(defmacro with-retry-restart ((name format-string &rest format-args) &body body)
+  (let ((stream (gensym "STREAM"))
+        (tag (gensym "TAG"))
+        (block (gensym "BLOCK")))
+    `(block ,block
+       (tagbody
+          ,tag
+          (restart-case
+              (return-from ,block
+                (progn ,@body))
+            (,name ()
+              :report (lambda (,stream)
+                        (format ,stream ,format-string ,@format-args))
+              (go ,tag)))))))
+
 (defun translate-name (name)
   (flet ((r (search replace data)
            (cl-ppcre:regex-replace-all search data replace)))
@@ -79,7 +94,7 @@
   (:method (point (name symbol) (frame frame))
     (setf (gethash name (points frame)) point)))
 
-(defun markers (frame)
+(defmethod markers ((frame frame))
   (loop for marker being the hash-keys of (points frame)
         collect marker))
 
@@ -195,7 +210,11 @@
 (defun map-read-vicon-frames (stream vicon-file function)
   (loop for line = (read-clean-line stream)
         while line
-        do (funcall function (parse-frame (cl-ppcre:split "," line) vicon-file))))
+        do (unless (string= line "")
+             (let ((frame (with-retry-restart (retry "Retry parsing the line ~s" line)
+                            (parse-frame (cl-ppcre:split "," line) vicon-file))))
+               (with-retry-restart (retry "Retry calling the frame mapping function.")
+                 (funcall function frame))))))
 
 (defun parse-vicon-file (pathname &key (external-format :default))
   (with-open-file (stream pathname :direction :input :external-format external-format)
