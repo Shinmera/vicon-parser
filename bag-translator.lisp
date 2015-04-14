@@ -64,14 +64,47 @@
           :source-name ,(princ-to-string id)
           :source-config ,(format nil "rsb:/#~A" id))))
 
-(defun translate (vicon-file pathname)
-  (rsbag:with-bag (bag pathname :direction :io :if-exists :supersede
-                                :transform `(rsbag:&from-source :converter ,(cdr (assoc 'nibbles:octet-vector
-                                                                                        (rsb:default-converters)))))
-    (let* ((id (uuid:make-v1-uuid))
-           (channel (create-vicon-channel bag id)))
-      (loop for frame across (frames vicon-file)
-            do (translate-frame frame channel id)))))
+(defmacro with-default-bag ((bag) pathname &body body)
+  `(rsbag:with-bag (,bag ,pathname
+                         :direction :io
+                         :if-exists :supersede
+                         :transform `(rsbag:&from-source
+                                      :converter ,(cdr (assoc 'nibbles:octet-vector
+                                                              (rsb:default-converters)))))
+     ,@body))
 
-(defun convert (from-csv to-tide)
-  (translate (parse-vicon-file from-csv) to-tide))
+(defun call-with-vicon-channel (bag-or-pathname function)
+  (etypecase bag-or-pathname
+    ((or string pathname)
+     (with-default-bag (bag) bag-or-pathname
+       (call-with-vicon-channel bag function)))
+    (rsbag:bag
+     (let* ((id (uuid:make-v1-uuid))
+            (channel (create-vicon-channel bag-or-pathname id)))
+       (funcall function id channel)))))
+
+(defmacro with-vicon-channel ((channel id) bag-or-pathname &body body)
+  `(call-with-vicon-channel ,bag-or-pathname (lambda (,id ,channel)
+                                               ,@body)))
+
+(defun translate (vicon-file-descriptor channel id)
+  (flet ((process-stream (stream)
+           (let ((file (read-vicon-header stream)))
+             (map-read-vicon-frames
+              stream file
+              (lambda (frame)
+                (translate-frame frame channel id))))))
+    (etypecase vicon-file
+      ((pathname string)
+       (with-open-file (stream bag-or-pathname :direction :input)
+         (process-stream stream)))
+      (stream
+       (process-stream stream))
+      (vicon-file
+       (loop for frame across (frames vicon-file)
+             do (translate-frame frame channel id))))))
+
+(defun convert (source target)
+  (with-vicon-channel (channel id) target
+    (dolist (src (alexandria:ensure-list source))
+      (translate src channel id))))
