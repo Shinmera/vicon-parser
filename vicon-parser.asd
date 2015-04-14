@@ -1,7 +1,7 @@
 (in-package #:cl-user)
 (asdf:defsystem vicon-parser
   :name "Vicon-Parser"
-  :version "1.0.0"
+  :version "1.1.0"
   :license "LGPL2.1"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
