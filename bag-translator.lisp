@@ -94,14 +94,14 @@
               stream file
               (lambda (frame)
                 (translate-frame frame channel id))))))
-    (etypecase vicon-file
-      ((pathname string)
-       (with-open-file (stream bag-or-pathname :direction :input)
+    (etypecase vicon-file-descriptor
+      ((or pathname string)
+       (with-open-file (stream vicon-file-descriptor :direction :input)
          (process-stream stream)))
       (stream
-       (process-stream stream))
+       (process-stream vicon-file-descriptor))
       (vicon-file
-       (loop for frame across (frames vicon-file)
+       (loop for frame across (frames vicon-file-descriptor)
              do (translate-frame frame channel id))))))
 
 (defun convert (source target)
