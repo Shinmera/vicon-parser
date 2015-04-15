@@ -109,8 +109,44 @@
     (dolist (src (alexandria:ensure-list source))
       (translate src channel id))))
 
-(defun main ()
-  (let* ((args (uiop:command-line-arguments))
-         (inputs (butlast args))
-         (output (alexandria:lastcar args)))
-    (convert inputs output)))
+(defun main (&rest noop)
+  (declare (ignore noop))
+  (let ((args (uiop:command-line-arguments)))
+    (case (langth args)
+      ((0 1)
+       (print-help))
+      (T
+       (let ((args (mapcar #'uiop:parse-native-namestring args)))
+         (convert (rest args) (first args)))))))
+
+(defun print-help ()
+  (let ((system (asdf:find-system :vicon-bag-translator)))
+    (format T "~a v~a
+
+~a
+
+Usage:
+vicon-bag-translator output input [input ...]
+
+  output        Path to the resulting TIDE file
+  input         Path to a Vicon CSV input file
+
+If multiple input files are specified, they are
+processed into the bag in sequence on the same
+channel.
+
+Project URL: ~a
+Maintend by: ~a
+Compiled against
+~{~a~^, ~}"
+            (asdf:component-name system)
+            (asdf:component-version system)
+            (asdf:system-description system)
+            (asdf:system-homepage system)
+            (asdf:system-maintainer system)
+            (mapcar (lambda (dep)
+                      (let ((system (asdf:find-system dep)))
+                        (format NIL "~a v~a"
+                                (asdf:component-name system)
+                                (asdf:component-version system))))
+                    (asdf:system-depends-on system)))))

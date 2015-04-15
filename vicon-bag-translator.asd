@@ -6,6 +6,7 @@
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :description "Translating from the parsed VICON file into the RSBag format."
+  :homepage "https://github.com/Shinmera/vicon-parser/"
   :serial T
   :components ((:file "translator-package")
                (:file "bag-translator"))
