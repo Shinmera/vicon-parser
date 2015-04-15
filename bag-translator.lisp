@@ -112,7 +112,7 @@
 (defun main (&rest noop)
   (declare (ignore noop))
   (let ((args (uiop:command-line-arguments)))
-    (case (langth args)
+    (case (length args)
       ((0 1)
        (print-help))
       (T
