@@ -87,19 +87,37 @@
   `(call-with-vicon-channel ,bag-or-pathname (lambda (,id ,channel)
                                                ,@body)))
 
-(defun translate (vicon-file-descriptor channel id)
-  (flet ((process-stream (stream)
-           (let ((file (read-vicon-header stream)))
+(defun translate (vicon-file-descriptor channel id &key file)
+  (flet ((process-stream (stream &key (file nil filep))
+           (let ((file (apply #'read-vicon-header stream
+                              (when filep (list :file file)))))
              (map-read-vicon-frames
               stream file
               (lambda (frame)
                 (translate-frame frame channel id))))))
     (etypecase vicon-file-descriptor
-      ((or pathname string)
-       (with-open-file (stream vicon-file-descriptor :direction :input)
-         (process-stream stream)))
+      (string
+       (translate (parse-namestring vicon-file-descriptor) channel id))
+      (pathname
+       (cond
+         ((wild-pathname-p vicon-file-descriptor)
+          (mapc (alexandria:rcurry #'translate channel id)
+                (directory vicon-file-descriptor)))
+         ((string= (pathname-type vicon-file-descriptor) "zip")
+          (zip:with-zipfile (file vicon-file-descriptor)
+            (translate file channel id)))
+         (t
+          (alexandria:with-input-from-file (stream vicon-file-descriptor)
+            (process-stream stream :file (pathname stream))))))
+      (zip:zipfile
+       (zip:do-zipfile-entries (name entry vicon-file-descriptor)
+         (with-simple-restart (skip "Skip zip-file entry ~A" name)
+           (process-stream (flexi-streams:make-flexi-stream
+                            (flexi-streams:make-in-memory-input-stream
+                             (zip:zipfile-entry-contents entry)))
+                           :file (parse-namestring name)))))
       (stream
-       (process-stream vicon-file-descriptor))
+       (process-stream vicon-file-descriptor :file file))
       (vicon-file
        (loop for frame across (frames vicon-file-descriptor)
              do (translate-frame frame channel id))))))
@@ -130,6 +148,7 @@ vicon-bag-translator output input [input ...]
 
   output        Path to the resulting TIDE file
   input         Path to a Vicon CSV input file
+                (can be a Zip-file containing the CSV file)
 
 If multiple input files are specified, they are
 processed into the bag in sequence on the same

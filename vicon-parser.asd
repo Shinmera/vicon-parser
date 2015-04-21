@@ -11,4 +11,5 @@
                (:file "vicon-parser"))
   :depends-on (:alexandria
                :cl-ppcre
-               :parse-float))
+               :parse-float
+               :zip))
