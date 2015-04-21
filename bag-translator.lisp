@@ -135,10 +135,11 @@ If multiple input files are specified, they are
 processed into the bag in sequence on the same
 channel.
 
-Project URL: ~a
-Maintend by: ~a
+Project URL:   ~a
+Maintained by: ~a
 Compiled against
-~{~a~^, ~}"
+  ~@<~{~{~36a ~a~}~^~@:_~}~@:>
+"
             (asdf:component-name system)
             (asdf:component-version system)
             (asdf:system-description system)
@@ -146,7 +147,6 @@ Compiled against
             (asdf:system-maintainer system)
             (mapcar (lambda (dep)
                       (let ((system (asdf:find-system dep)))
-                        (format NIL "~a v~a"
-                                (asdf:component-name system)
-                                (asdf:component-version system))))
+                        (list (asdf:component-name system)
+                              (asdf:component-version system))))
                     (asdf:system-depends-on system)))))
