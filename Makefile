@@ -1,8 +1,10 @@
 all: vicon-bag-translator
 
 vicon-bag-translator: vicon-bag-translator.asd *.lisp
-	cl -Q                                                                           \
+	cl                                                                              \
+	  -Q                                                                            \
 	  -S "(:source-registry (:directory \""$$(pwd)"\") :inherit-configuration)"     \
-	  '(asdf:oos (quote asdf:program-op) :vicon-bag-translator)'
+	  -s vicon-bag-translator                                                       \
+	  --dump ! --output $@ -r "vicon-bag-translator:main"
 
 .PHONY: all
