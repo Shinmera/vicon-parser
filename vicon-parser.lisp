@@ -191,7 +191,7 @@
   (alexandria:when-let ((line (read-line stream NIL)))
     (string-trim '(#\Return #\Newline #\Space) line)))
 
-(defun read-vicon-header (stream)
+(defun read-vicon-header (stream &key (file (ignore-errors (pathname stream))))
   (destructuring-bind (description resolution markers fields metrics)
       (loop repeat 5
             for line = (read-clean-line stream)
@@ -199,7 +199,7 @@
             else do (error "Invalid Vicon file: incomplete header."))
     (make-instance
      'vicon-file
-     :file (ignore-errors (pathname stream))
+     :file file
      :description description
      :resolution (parse-integer resolution)
      :markers (parse-marker-list
