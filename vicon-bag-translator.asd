@@ -14,6 +14,7 @@
                :cl-rsb-common
                :rsbag-tidelog
                :rsb-converter-protocol-buffer
+               :rsbag-helper
                :vicon-parser)
   :build-operation asdf:program-op
   :build-pathname "vicon-bag-translator"
