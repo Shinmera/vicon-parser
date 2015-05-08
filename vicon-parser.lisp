@@ -191,6 +191,19 @@
   (alexandria:when-let ((line (read-line stream NIL)))
     (string-trim '(#\Return #\Newline #\Space) line)))
 
+(defun split (char string)
+  (let ((parts ())
+        (output (make-string-output-stream)))
+    (flet ((commit ()
+             (push (get-output-stream-string output) parts)
+             (setf output (make-string-output-stream))))
+      (loop for current across string
+            do (if (char= char current)
+                   (commit)
+                   (write-char current output))
+            finally (commit)))
+    (nreverse parts)))
+
 (defun read-vicon-header (stream &key (file (ignore-errors (pathname stream))))
   (destructuring-bind (description resolution markers fields metrics)
       (loop repeat 5
@@ -203,9 +216,9 @@
      :description description
      :resolution (parse-integer resolution)
      :markers (parse-marker-list
-               (cddr (cl-ppcre:split "," markers))
-               (cddr (cl-ppcre:split "," fields))
-               (cddr (cl-ppcre:split "," metrics))))))
+               (cddr (split #\, markers))
+               (cddr (split #\, fields))
+               (cddr (split #\, metrics))))))
 
 (defun map-read-vicon-frames (stream vicon-file function)
   (loop for line = (read-clean-line stream)
@@ -213,7 +226,7 @@
         do (unless (string= line "")
              (with-simple-restart (skip "Skip processing the line ~s" line)
                (let ((frame (with-retry-restart (retry "Retry parsing the line ~s" line)
-                              (parse-frame (cl-ppcre:split "," line) vicon-file))))
+                              (parse-frame (split #\, line) vicon-file))))
                  (with-retry-restart (retry "Retry calling the frame mapping function.")
                    (funcall function frame)))))))
 
