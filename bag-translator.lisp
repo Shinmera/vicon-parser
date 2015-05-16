@@ -27,7 +27,7 @@
              array)))
 
 (defmacro with-vicon-channel ((channel bag) &body body)
-  `(with-bag-channel (,channel ,bag "/vicon/data" "rst.devices.mocap.Vicon")
+  `(with-bag-channel (,channel ,bag "/vicon/data" ".rst.devices.mocap.Vicon")
      ,@body))
 
 (defun convert (source target)
