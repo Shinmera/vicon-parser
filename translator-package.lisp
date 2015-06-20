@@ -3,11 +3,6 @@
   (:use #:cl #:vicon-parser #:rsbag-helper)
   (:shadowing-import-from #:vicon-parser #:id)
   (:export
-   #:*rst-path*
-   #:load-proto-file
-   #:load-vicon-proto-file
-   #:to-vicon-object
-   #:translate
+   #:with-vicon-channel
    #:convert
-
    #:main))

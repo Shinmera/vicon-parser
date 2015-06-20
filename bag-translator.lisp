@@ -26,17 +26,21 @@
                    when object do (vector-push object array))
              array)))
 
+(defmacro with-vicon-channel ((channel bag pathname &rest options) &body body)
+  `(with-default-bag (,bag ,pathname ,@options)
+     (with-bag-channel (,channel ,bag "/vicon/data" "rst.devices.mocap.Vicon")
+       ,@body)))
+
 (defun convert (source target)
-  (with-default-bag (bag target)
-    (with-bag-channel (channel bag "/vicon/data" "rst.devices.mocap.Vicon")
-      (with-file-descriptor (stream file source)
-        (let ((file (apply #'read-vicon-header stream
-                           (when file (list :file file)))))
-          (map-read-vicon-frames
-           stream file
-           (lambda (frame)
-             (make-entry channel frame (make-precise-timestamp (timestamp frame))
-                         :sequence-number (id frame)))))))))
+  (with-vicon-channel (channel bag target)
+    (with-file-descriptor (stream file source)
+      (let ((file (apply #'read-vicon-header stream
+                         (when file (list :file file)))))
+        (map-read-vicon-frames
+         stream file
+         (lambda (frame)
+           (make-entry channel frame (make-precise-timestamp (timestamp frame))
+                       :sequence-number (id frame))))))))
 
 (defun print-help ()
   (let ((system (asdf:find-system :vicon-bag-translator)))
