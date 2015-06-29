@@ -8,7 +8,8 @@
   :description "A parser for VICON CSV files."
   :serial T
   :components ((:file "parser-package")
-               (:file "vicon-parser"))
+               (:file "vicon-parser")
+               (:file "documentation"))
   :depends-on (:alexandria
                :cl-ppcre
                :parse-float
